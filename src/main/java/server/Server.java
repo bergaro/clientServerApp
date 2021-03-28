@@ -9,12 +9,10 @@ import java.net.Socket;
 
 public class Server {
     private static Server instance;                                 // Поле хранящее экземпляр класса
-    private ServerSocket serverSocket;                              // Поле хранит объект типа ServerSocket
     private Socket clientSocket;                                    // Сокет для обмена сообщениями
-    private PrintWriter out;                                        // Поток записи в сокет
-    private BufferedReader in;                                      // Поток чтения из сокета
     private boolean workStatus = true;                              // Отвечает за работу сервера
     private String userName;                                        // Поле хранит имя клиента
+
     private Server() { }
     /**
      * Создаёт объект типа Server или
@@ -32,22 +30,16 @@ public class Server {
      * workStatus = true.
      */
     public void startServer() {
-        try {
-            try{
-                serverSocket = new ServerSocket(8081);
-                while (workStatus) {
-                    clientSocket = serverSocket.accept();
-                    serverDoAnswer();
-                }
-            } finally {
-                System.out.println("Server close!");
-                clientSocket.close();
-                serverSocket.close();
+        try (ServerSocket serverSocket = new ServerSocket(8081)){
+            while (workStatus) {
+                clientSocket = serverSocket.accept();
+                serverDoAnswer();
             }
+            System.out.println("Server close!");
+            clientSocket.close();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
-
     }
     /**
      * Читает сообщение из сокета и при помощи getAnswer()
@@ -56,10 +48,10 @@ public class Server {
      * workStatus на false.
      * @throws IOException
      */
-    private void serverDoAnswer() throws IOException{
-        try {
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
+    private void serverDoAnswer(){
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+
             String msg = in.readLine();
             if(msg.equals("stop")) {
                 workStatus = false;
@@ -68,9 +60,8 @@ public class Server {
                 out.write(getAnswer(msg));
                 out.flush();
             }
-        } finally {
-            in.close();
-            out.close();
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
         }
     }
     /**
