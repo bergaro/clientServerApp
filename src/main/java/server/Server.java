@@ -13,7 +13,8 @@ public class Server {
     private Socket clientSocket;                                    // Сокет для обмена сообщениями
     private PrintWriter out;                                        // Поток записи в сокет
     private BufferedReader in;                                      // Поток чтения из сокета
-
+    private boolean workStatus = true;                              // Отвечает за работу сервера
+    private String userName;                                        // Поле хранит имя клиента
     private Server() { }
     /**
      * Создаёт объект типа Server или
@@ -27,16 +28,17 @@ public class Server {
         return  instance;
     }
     /**
-     * Создаёт сервер-сокет и слушает порт 8080.
-     * После получения одного воходящего сообщения
-     * Закрывает соединение и сервер-сокет
+     * Создаёт сервер-сокет и слушает порт 8081 пока
+     * workStatus = true.
      */
     public void startServer() {
         try {
             try{
                 serverSocket = new ServerSocket(8081);
-                clientSocket = serverSocket.accept();
-                serverDoAnswer();
+                while (workStatus) {
+                    clientSocket = serverSocket.accept();
+                    serverDoAnswer();
+                }
             } finally {
                 System.out.println("Server close!");
                 clientSocket.close();
@@ -48,10 +50,10 @@ public class Server {
 
     }
     /**
-     * Читает сообщение из сокета
-     * и выводит его на экран вместе с номером
-     * порта, с которого пришло соединение.
-     * В ответ отправляет строку с приветствием клиента.
+     * Читает сообщение из сокета и при помощи getAnswer()
+     * формирует ответ.
+     * Если от клиента поступит команда - 'stop', изменяет
+     * workStatus на false.
      * @throws IOException
      */
     private void serverDoAnswer() throws IOException{
@@ -59,14 +61,33 @@ public class Server {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             String msg = in.readLine();
-            System.out.println("New connection accepted");
-            String answer = String.format("Hi %s, your port is %d", msg, clientSocket.getPort());
-            System.out.println(answer);
-            out.write("Hello!");
-            out.flush();
+            if(msg.equals("stop")) {
+                workStatus = false;
+            } else {
+                System.out.println("New connection accepted");
+                out.write(getAnswer(msg));
+                out.flush();
+            }
         } finally {
             in.close();
             out.close();
+        }
+    }
+    /**
+     * 3 варианта возможного ответа от сервера.
+     * @param msg строка сообщения
+     * @return один из 3-ёх возможных ответов, в зависимости от
+     * содержимого строки.
+     */
+    private String getAnswer(String msg) {
+        if(msg.equals("yes")) {
+            return String.format("Welcome to the kids area, %s! Let's play!", userName);
+        } else if(msg.equals("no")) {
+            return String.format("Welcome to the adult zone, %s!", userName);
+        } else {
+            userName = msg;
+            return String.format("Hi %s! " +
+                                "Are you child?(yes/no)", userName);
         }
     }
 }

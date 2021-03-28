@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.Socket;
 
 public class Client {
-    private static final String HOST = "localhost";                 // Адрес для соединения
+    private static final String HOST = "netology.homework";         // Адрес для соединения
     private static final int PORT = 8081;                           // Порт для соединения
     private static Socket clientSocket;                             //сокет для общения
     private static BufferedReader reader;                           // ридер читающий с консоли
@@ -29,7 +29,6 @@ public class Client {
                 String serverWord = in.readLine();
                 System.out.println("Server answer: " + serverWord);
             } finally {
-                System.out.println("Close client...");
                 clientSocket.close();
                 in.close();
                 out.close();
